@@ -1,0 +1,9 @@
+# Keep generated repository ZIPs consistent across Windows and Linux.
+* text=auto eol=lf
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ttf binary
+*.otf binary

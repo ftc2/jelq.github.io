@@ -1,0 +1,1 @@
+"""Static Kodi repository tools."""
