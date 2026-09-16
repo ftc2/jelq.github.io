@@ -239,6 +239,8 @@ def load_packages(root):
 
 
 def render_index(latest, repository):
+    # Kodi's HTTP directory parser requires href first on the bootstrap anchor
+    # and its plain filename as the label; retain that order when styling it.
     links = []
     for addon_id, package in sorted(latest.items()):
         href = "addons/%s/%s" % (addon_id, package.filename)
@@ -284,7 +286,7 @@ footer { margin-top: 32px; }
 <li>Open <strong>Add-ons → Install from zip file</strong>, select that source, and install <strong>{repository_name}</strong>. Enable Unknown sources if Kodi asks.</li>
 <li>Choose <strong>Install from repository → jelq repository</strong> to install jelq and the skin.</li>
 </ol>
-<p><a class="download" href="{repository_href}">{repository_name}</a></p>
+<p><a href="{repository_href}" class="download">{repository_name}</a></p>
 <h2>Latest packages</h2>
 <ul class="packages">
 {package_links}

@@ -1,6 +1,7 @@
 import hashlib
 import io
 from pathlib import Path
+import re
 import stat
 import tempfile
 import unittest
@@ -145,6 +146,19 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertFalse((site / "stale.txt").exists())
         self.assertEqual(catalog.Package(second).addon_id, "repository.jelq")
+
+    def test_bootstrap_zip_is_visible_to_kodi_http_directory(self):
+        self.import_zip()
+        site = catalog.build(self.root)
+        # Kodi 21.3 HTTPDirectory.cpp requires href first and a filename label
+        # matching the relative link. A browser's HTML parser is more permissive.
+        # https://github.com/xbmc/xbmc/blob/21.3-Omega/xbmc/filesystem/HTTPDirectory.cpp
+        matches = re.findall(r'<a href="([^"]*)"[^>]*>\s*(.*?)\s*</a>(.+?)(?=<a|</tr|$)',
+                             (site / "index.html").read_text(encoding="utf-8"), re.I | re.S)
+        visible = [link for link, label, _ in matches if label.strip() == link]
+        self.assertIn("repository.jelq-1.0.0.zip", visible)
+        installer = site / "repository.jelq-1.0.0.zip"
+        self.assertEqual(catalog.Package(installer.read_bytes()).addon_id, "repository.jelq")
 
     def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(self):
         self.import_zip("0.2.9")
