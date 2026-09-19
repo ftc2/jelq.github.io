@@ -9,11 +9,15 @@
   history must stay out.
 - Keep approved, immutable add-on ZIPs under `packages/`. Do not copy source
   checkouts, private notes, local Kodi profiles, credentials, or CI logs here.
-- Host tooling uses Python 3.8, the standard library, and `uv`.
+- Host tooling uses Python 3.8 and `uv`. `tools/catalog.py` uses only the standard
+  library; Ruff, pytest, and Kodi's add-on checker are locked development tools.
+  Follow `ruff.toml`, which matches the `jelq` source repository's style.
 - `tools/catalog.py import ZIP --addon-id ID --version X.Y.Z` validates and imports
   an approved package. Never replace different bytes at a published version.
-- `uv run python -m unittest discover -s tests -v` and
-  `uv run python tools/catalog.py build` validate the distribution.
+- Apply automatic fixes with `uv run --frozen python -m tools.fix`. Run
+  `uv run --frozen python -m tools.check` before submitting changes, and
+  `uv run --frozen python -m tools.check full` before pushing; the full tier also
+  checks the lockfile, builds `site/`, and runs Kodi's add-on checker (network).
 - `site/` is generated, ignored, and is the only directory deployed to Pages.
 - Base URL: `https://ftc2.github.io/jelq.github.io/`. Keep repository metadata,
   links, and documentation consistent with it.

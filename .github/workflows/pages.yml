@@ -26,10 +26,14 @@ jobs:
           version: '0.11.17'
           python-version: '3.8'
           enable-cache: false
-      - name: Test repository generation
-        run: uv run python -m unittest discover -s tests -v
-      - name: Build public distribution
-        run: uv run python tools/catalog.py build
+      - name: Install locked development tools
+        run: uv sync --frozen
+      - name: Check Python quality
+        run: uv run --frozen python -m tools.check quality
+      - name: Check lockfile
+        run: uv run --frozen python -m tools.check dependencies
+      - name: Build site and validate repository add-on for Kodi Omega
+        run: uv run --frozen python -m tools.check package
       - name: Upload Pages site
         if: github.repository == 'ftc2/jelq.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

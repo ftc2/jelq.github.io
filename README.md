@@ -71,15 +71,29 @@ public publishing workflow or use a suitable app token.
 
 ## Local maintenance
 
-Install [uv](https://docs.astral.sh/uv/). Host tooling targets Python 3.8 and uses
-only the standard library:
+Install [uv](https://docs.astral.sh/uv/). Host tooling targets Python 3.8; the
+catalog tool itself uses only the standard library. Import approved packages and
+build the site with:
 
 ```sh
 uv run python tools/catalog.py import /path/skin.jelq-X.Y.Z.zip --addon-id skin.jelq --version X.Y.Z
 uv run python tools/catalog.py import /path/script.jelq-X.Y.Z.zip --addon-id script.jelq --version X.Y.Z
-uv run python -m unittest discover -s tests -v
 uv run python tools/catalog.py build
 ```
+
+Development checks mirror the `jelq` source repository. Initialize the locked
+environment with `uv sync --frozen`, apply automatic fixes with
+`uv run --frozen python -m tools.fix`, and run the quality tier (Ruff lint and
+formatting, pytest) before submitting changes:
+
+```sh
+uv run --frozen python -m tools.check
+```
+
+Before pushing, run `uv run --frozen python -m tools.check full`. It adds the
+lockfile check, builds `site/`, and validates the repository add-on with Kodi's
+official add-on checker, which needs network access. CI runs the same tiers
+before every Pages deployment.
 
 `packages/` contains approved versioned ZIPs. `repository.jelq/` defines the
 repository add-on. `site/` is generated and ignored; it is the only deployment

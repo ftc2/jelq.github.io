@@ -1,0 +1,123 @@
+# https://docs.astral.sh/ruff/configuration/
+
+line-length = 100
+indent-width = 2
+target-version = "py38"
+
+[format]
+quote-style = "single"
+line-ending = "lf"
+
+[lint]
+preview = true
+explicit-preview-rules = true
+extend-select = [
+  # Core checks
+  "C90",  # mccabe: complexity metric for functions
+  "D",    # pydocstyle: docstring formatting
+  "E",    # pycodestyle: errors
+  "I",    # isort: import ordering checks
+  "N",    # pep8-naming: naming conventions
+  "RUF",  # ruff: additional Ruff-native checks
+  "UP",   # pyupgrade: syntax modernization
+  "W",    # pycodestyle: warnings
+  "YTT",  # flake8-2020: sys.version/sys.version_info misuse
+  # Plugin checks (alphabetical by code)
+  "A",      # flake8-builtins: misuse of Python built-in names
+  "ARG",    # flake8-unused-arguments: unused function arguments
+  "ASYNC",  # flake8-async: async/await usage
+  "B",      # flake8-bugbear: common bug patterns
+  "BLE",    # flake8-blind-except: bare excepts
+  "C4",     # flake8-comprehensions: comprehension best practices
+  "COM",    # flake8-commas: trailing/comma issues
+  "DOC",    # pydoclint: docstring linting and consistency
+  "DTZ",    # flake8-datetimez: timezone-aware datetime usage
+  "EM",     # flake8-errmsg: error message style
+  "EXE",    # flake8-executable: executable file checks
+  "FA",     # flake8-future-annotations: future import for annotations
+  "FBT",    # flake8-boolean-trap: boolean pitfalls
+  "FIX",    # flake8-fixme: FIXME comments
+  "FLY",    # flynt: f-string conversion suggestions
+  "FURB",   # refurb: code refurbishment suggestions
+  "G",      # flake8-logging-format: logging format string issues
+  "ICN",    # flake8-import-conventions: conventional import aliases
+  "INP",    # flake8-no-pep420: requires __init__.py files
+  "INT",    # flake8-gettext: internationalization usage
+  "ISC",    # flake8-implicit-str-concat: implicit string concatenation
+  "LOG",    # flake8-logging: proper logging usage
+  "PERF",   # perflint: performance-related checks
+  "PGH",    # pygrep-hooks: custom grep hooks
+  "PIE",    # flake8-pie: Python improvement suggestions
+  "PL",     # pylint: pylint conventions
+  "PT",     # flake8-pytest-style: pytest best practices
+  "PTH",    # flake8-use-pathlib: pathlib over os.path
+  "PYI",    # flake8-pyi: type stub consistency
+  "RET",    # flake8-return: return statement issues
+  "RSE",    # flake8-raise: raise statement usage
+  "S",      # flake8-bandit: security issues
+  "SIM",    # flake8-simplify: code simplification hints
+  "SLF",    # flake8-self: instance methods that do not use self
+  "SLOT",   # flake8-slots: __slots__ suggestions
+  "T10",    # flake8-debugger: debugger statements
+  "T20",    # flake8-print: print/pprint statements
+  "TC",     # flake8-type-checking: typing import placement
+  "TD",     # flake8-todos: TODO comments
+  "TID",    # flake8-tidy-imports: import style constraints
+  "TRY",    # tryceratops: try/except usage suggestions
+  # Framework-specific checks currently disabled (not used by this repository)
+  # "AIR",   # airflow
+  # "DJ",    # flake8-django
+  # "FAST",  # fastapi
+  # "NPY",   # numpy
+  # "PD",    # pandas-vet
+  # Optional checks currently disabled
+  # "ANN",  # flake8-annotations: type annotation style
+  # "CPY",  # flake8-copyright: copyright header checks
+  # "ERA",  # eradicate: commented-out code detection
+  # "Q",    # flake8-quotes: quote style consistency (conflicts with formatter)
+]
+
+ignore = [
+  # Project style
+  "E501",    # pycodestyle: line too long (formatter-managed)
+  "FBT003",  # flake8-boolean-trap: boolean positional value in function call
+  # Framework-specific checks
+  "AIR",   # airflow
+  "DJ",    # django
+  "FAST",  # fastapi
+  "NPY",   # numpy
+  "PD",    # pandas-vet
+  # Docstring style
+  "D1",    # pydocstyle: missing public docstrings
+  "D203",  # pydocstyle: one blank line before class docstring
+  "D212",  # pydocstyle: summary line position
+  "D401",  # pydocstyle: first line should be imperative mood
+  # Typing/exception/perf
+  "EM101",   # flake8-errmsg: string literals in exception constructors
+  "FA102",   # flake8-future-annotations: missing future annotations import
+  "PERF401", # perflint: for-loop that can be a list comprehension
+  "RET504",  # flake8-return: assigned variable immediately returned
+  "S311",    # flake8-bandit: pseudo-random generators in non-crypto contexts
+  "TC002",   # flake8-type-checking: typing imports outside TYPE_CHECKING
+  "TC003",   # flake8-type-checking: typing imports not inside TYPE_CHECKING
+  "TRY003",  # tryceratops: long inline exception messages
+  # Redundant/conflicting with formatter
+  # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+  "W191",   # tab-indentation
+  "E111",   # indentation-with-invalid-multiple
+  "E114",   # indentation-with-invalid-multiple-comment
+  "E117",   # over-indented
+  "D206",   # docstring-tab-indentation
+  "D300",   # triple-single-quotes
+  "Q000",   # bad-quotes-inline-string
+  "Q001",   # bad-quotes-multiline-string
+  "Q002",   # bad-quotes-docstring
+  "Q003",   # avoidable-escaped-quote
+  "COM812", # missing-trailing-comma
+  "COM819", # prohibited-trailing-comma
+]
+
+[lint.per-file-ignores]
+'tests/**/*.py' = [
+  "S101", # Use of `assert` detected
+]
