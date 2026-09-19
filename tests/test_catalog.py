@@ -11,6 +11,10 @@ import zipfile
 from tools import catalog
 
 
+REPOSITORY_MANIFEST = (catalog.ROOT / "repository.jelq" / "addon.xml").read_bytes()
+REPOSITORY_VERSION = ET.fromstring(REPOSITORY_MANIFEST).get("version")
+REPOSITORY_ZIP = "repository.jelq-%s.zip" % REPOSITORY_VERSION
+
 def manifest(addon_id="script.jelq", version="0.1.0", assets=""):
     return ('<addon id="%s" version="%s" name="Test" provider-name="ftc2">'
             '<extension point="xbmc.addon.metadata"><assets>%s</assets></extension>'
@@ -94,7 +98,7 @@ class CatalogTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         source = self.root / "repository.jelq"
         source.mkdir()
-        (source / "addon.xml").write_bytes(manifest("repository.jelq", "1.0.0"))
+        (source / "addon.xml").write_bytes(REPOSITORY_MANIFEST)
 
     def import_zip(self, version="0.1.0", extras=None, assets=""):
         data = zip_bytes(version=version, extras=extras, assets=assets)
@@ -124,25 +128,25 @@ class CatalogTests(unittest.TestCase):
                                              extras={"script.jelq/resources/icon.png": b"icon bytes",
                                                      "script.jelq/private.py": b"only inside ZIP"})
         site = catalog.build(self.root)
-        xml = (site / "addons.xml").read_bytes()
+        xml = (site / "addons/addons.xml").read_bytes()
         entries = {entry.get("id"): entry.get("version") for entry in ET.fromstring(xml)}
-        self.assertEqual(entries, {"repository.jelq": "1.0.0", "script.jelq": "0.2.10"})
-        self.assertEqual((site / "addons.xml.md5").read_text().strip(), hashlib.md5(xml).hexdigest())
+        self.assertEqual(entries, {"repository.jelq": REPOSITORY_VERSION, "script.jelq": "0.2.10"})
+        self.assertEqual((site / "addons/addons.xml.md5").read_text().strip(), hashlib.md5(xml).hexdigest())
         package_dir = site / "addons" / "script.jelq"
         self.assertEqual((package_dir / old_path.name).read_bytes(), old_data)
         self.assertEqual((package_dir / new_path.name).read_bytes(), new_data)
         self.assertEqual((package_dir / "resources/icon.png").read_bytes(), b"icon bytes")
         self.assertFalse((package_dir / "private.py").exists())
         self.assertFalse((package_dir / "LICENSE").exists())
-        self.assertIn('href="repository.jelq-1.0.0.zip"', (site / "index.html").read_text())
+        self.assertIn('href="%s"' % REPOSITORY_ZIP, (site / "index.html").read_text())
         self.assertTrue((site / ".nojekyll").exists())
 
     def test_repository_zip_is_deterministic_and_build_cleans_stale_output(self):
         site = catalog.build(self.root)
-        first = (site / "repository.jelq-1.0.0.zip").read_bytes()
+        first = (site / REPOSITORY_ZIP).read_bytes()
         (site / "stale.txt").write_text("old generated file")
         catalog.build(self.root)
-        second = (site / "repository.jelq-1.0.0.zip").read_bytes()
+        second = (site / REPOSITORY_ZIP).read_bytes()
         self.assertEqual(first, second)
         self.assertFalse((site / "stale.txt").exists())
         self.assertEqual(catalog.Package(second).addon_id, "repository.jelq")
@@ -156,9 +160,31 @@ class CatalogTests(unittest.TestCase):
         matches = re.findall(r'<a href="([^"]*)"[^>]*>\s*(.*?)\s*</a>(.+?)(?=<a|</tr|$)',
                              (site / "index.html").read_text(encoding="utf-8"), re.I | re.S)
         visible = [link for link, label, _ in matches if label.strip() == link]
-        self.assertIn("repository.jelq-1.0.0.zip", visible)
-        installer = site / "repository.jelq-1.0.0.zip"
+        self.assertIn(REPOSITORY_ZIP, visible)
+        installer = site / REPOSITORY_ZIP
         self.assertEqual(catalog.Package(installer.read_bytes()).addon_id, "repository.jelq")
+
+    def test_repository_index_is_outside_the_browsed_root(self):
+        # Browsing the root to install the bootstrap ZIP caches its listing; Kodi
+        # then fails any root file absent from that listing without a request.
+        site = catalog.build(self.root)
+        installed = catalog.Package((site / REPOSITORY_ZIP).read_bytes()).manifest
+        for tag in ("info", "checksum"):
+            with self.subTest(tag=tag):
+                url = installed.findtext("extension[@point='xbmc.addon.repository']/dir/" + tag)
+                path = url[len(catalog.BASE_URL):]
+                self.assertTrue(url.startswith(catalog.BASE_URL))
+                self.assertIn("/", path)
+                self.assertTrue(site.joinpath(*path.split("/")).is_file())
+        self.assertFalse((site / "addons.xml").exists())
+        self.assertFalse((site / "addons.xml.md5").exists())
+
+    def test_build_rejects_repository_index_in_the_browsed_root(self):
+        source = self.root / "repository.jelq/addon.xml"
+        source.write_bytes(REPOSITORY_MANIFEST.replace(b"jelq.github.io/addons/addons.xml",
+                                                       b"jelq.github.io/addons.xml"))
+        with self.assertRaisesRegex(catalog.CatalogError, "browsed root"):
+            catalog.build(self.root)
 
     def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(self):
         self.import_zip("0.2.9")
@@ -173,13 +199,13 @@ class CatalogTests(unittest.TestCase):
 
     def test_failed_build_preserves_previous_site(self):
         site = catalog.build(self.root)
-        before = (site / "addons.xml").read_bytes()
+        before = (site / "addons/addons.xml").read_bytes()
         package_dir = self.root / "packages/script.jelq"
         package_dir.mkdir(parents=True)
         (package_dir / "script.jelq-0.1.0.zip").write_bytes(b"invalid")
         with self.assertRaises(catalog.CatalogError):
             catalog.build(self.root)
-        self.assertEqual((site / "addons.xml").read_bytes(), before)
+        self.assertEqual((site / "addons/addons.xml").read_bytes(), before)
 
     def test_metadata_cannot_overwrite_package(self):
         self.import_zip(assets="<icon>script.jelq-0.1.0.zip</icon>",

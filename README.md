@@ -11,11 +11,13 @@ File source: **https://ftc2.github.io/jelq.github.io/**
 1. In Kodi 21 or later, open **Settings → File manager → Add source** and enter
    the URL above. Give the source a name such as `jelq`.
 2. Open **Add-ons → Install from zip file**, select that source, and install
-   `repository.jelq-1.0.0.zip`. Enable **Unknown sources** if Kodi requests it.
-3. Open **Install from repository → jelq repository**. Install **jelq** under
-   **Program add-ons**, and optionally the companion skin under **Look and feel
-   → Skin**.
-4. Launch jelq from program add-ons. Kodi can now discover future versioned
+   the `repository.jelq` ZIP. Enable **Unknown sources** if Kodi requests it.
+3. Open **Install from repository → jelq repository**. Install the **jelq**
+   companion skin under **Look and feel → Skin**, then switch Kodi to it when
+   prompted.
+4. Install **jelq** under **Video add-ons**. The script add-on requires a
+   compatible companion-skin version, so install or update the skin first.
+5. Launch jelq from Video add-ons. Kodi can now discover future versioned
    updates through this repository.
 
 The website also provides direct ZIP links for manual installation.
@@ -44,9 +46,6 @@ ZIPs into this distribution repository; that push triggers its Pages workflow.
 
 ## Publish a public update
 
-The initial distribution includes script and skin version `0.1.0`. Use a new
-version, such as `0.1.1`, for the next changed package.
-
 In the appropriate **upstream** source repository:
 
 1. Increase the add-on's `addon.xml` version to a new numeric `X.Y.Z` version.
@@ -60,8 +59,10 @@ In the appropriate **upstream** source repository:
 The moving `development` releases do not publish here. Ordinary fork builds and
 pull requests never publish here. A given add-on version is immutable: retrying
 the same ZIP is safe, but different bytes require a new version. Script and skin
-versions can advance independently. Concurrent publications retry against the
-latest distribution branch, preserving both packages.
+versions can otherwise advance independently; whenever the script raises its
+minimum skin dependency, publish the compatible skin first. Concurrent
+publications retry against the latest distribution branch, preserving both
+packages.
 
 Publish releases through the GitHub UI or an appropriately authenticated client.
 GitHub Releases created with a workflow's built-in `GITHUB_TOKEN` do not trigger
@@ -74,8 +75,8 @@ Install [uv](https://docs.astral.sh/uv/). Host tooling targets Python 3.8 and us
 only the standard library:
 
 ```sh
-uv run python tools/catalog.py import /path/script.jelq-0.1.0.zip --addon-id script.jelq --version 0.1.0
-uv run python tools/catalog.py import /path/skin.jelq-0.1.0.zip --addon-id skin.jelq --version 0.1.0
+uv run python tools/catalog.py import /path/skin.jelq-X.Y.Z.zip --addon-id skin.jelq --version X.Y.Z
+uv run python tools/catalog.py import /path/script.jelq-X.Y.Z.zip --addon-id script.jelq --version X.Y.Z
 uv run python -m unittest discover -s tests -v
 uv run python tools/catalog.py build
 ```
@@ -85,6 +86,13 @@ repository add-on. `site/` is generated and ignored; it is the only deployment
 input. The build produces a catalog, checksum, plain HTML download links, the
 repository installer, versioned ZIPs with SHA-256 checksums, and each add-on's
 declared artwork. Kodi verifies ZIPs using their `.zip.sha256` sidecar files.
+
+The catalog (`addons/addons.xml` and its checksum) deliberately stays out of the
+site root. Installing the bootstrap ZIP makes Kodi cache the root's HTML listing,
+and Kodi fails any later root-file request absent from that listing without
+contacting the server; the repository would then report "Could not connect"
+until Kodi restarts. The build rejects a repository manifest that points there.
+Changing `repository.jelq/` requires a new repository add-on version.
 
 Do not add private source checkouts, development notes, credentials, local Kodi
 profiles, or captured media-library data. All shipped license notices remain

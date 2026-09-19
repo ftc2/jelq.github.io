@@ -25,6 +25,9 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "https://ftc2.github.io/jelq.github.io/"
 REPOSITORY_ID = "repository.jelq"
+# Kodi caches the root listing browsed during bootstrap, then resolves the repository
+# index through that cache; files absent from the listing fail without a request.
+CATALOG_DIRECTORY = "addons"
 PACKAGE_IDS = frozenset(("script.jelq", "skin.jelq"))
 ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 VERSION_PATTERN = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z")
@@ -313,6 +316,27 @@ def write_package(directory, package):
     (directory / (package.filename + ".sha256")).write_bytes(digest)
 
 
+def check_repository_urls(manifest, output):
+    """Require repository URLs to resolve to generated files outside the browsed root."""
+    directory = manifest.find("extension[@point='xbmc.addon.repository']/dir")
+    if directory is None:
+        raise CatalogError("Repository manifest lacks an xbmc.addon.repository <dir>")
+    for tag in ("info", "checksum", "datadir"):
+        url = (directory.findtext(tag) or "").strip()
+        if not url.startswith(BASE_URL):
+            raise CatalogError("Repository <%s> must start with %s: %r" % (tag, BASE_URL, url))
+        path = url[len(BASE_URL):]
+        if tag == "datadir":
+            if path != CATALOG_DIRECTORY + "/":
+                raise CatalogError("Repository <datadir> must be %s%s/" % (BASE_URL, CATALOG_DIRECTORY))
+            continue
+        safe_path(path, "repository URL")
+        if "/" not in path:
+            raise CatalogError("Repository <%s> must not be in the browsed root directory: %r" % (tag, url))
+        if not output.joinpath(*path.split("/")).is_file():
+            raise CatalogError("Repository <%s> does not name a generated file: %r" % (tag, url))
+
+
 def build(root=ROOT):
     root = Path(root).resolve()
     destination = root / "site"
@@ -343,8 +367,10 @@ def build(root=ROOT):
         for addon_id in sorted(latest):
             catalog.append(copy.deepcopy(latest[addon_id].manifest))
         xml = ET.tostring(catalog, encoding="utf-8", xml_declaration=True) + b"\n"
-        (output / "addons.xml").write_bytes(xml)
-        (output / "addons.xml.md5").write_bytes(hashlib.md5(xml).hexdigest().encode("ascii") + b"\n")
+        catalog_dir = output / CATALOG_DIRECTORY
+        (catalog_dir / "addons.xml").write_bytes(xml)
+        (catalog_dir / "addons.xml.md5").write_bytes(hashlib.md5(xml).hexdigest().encode("ascii") + b"\n")
+        check_repository_urls(repository.manifest, output)
         write_package(output, repository)
         (output / "index.html").write_bytes(render_index(latest, repository))
         (output / ".nojekyll").touch()
