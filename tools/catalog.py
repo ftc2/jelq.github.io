@@ -301,6 +301,10 @@ p { margin: 12px 0; }
 .label, footer { color: #a4adb5; font-size: 0.85rem; }
 .label { text-transform: uppercase; letter-spacing: 0.14em; }
 code { display: block; overflow-wrap: anywhere; background: #1b2024; border: 1px solid #353b40; padding: 16px; border-radius: 5px; color: #fff; user-select: all; }
+.copy { position: relative; cursor: copy; padding-right: 88px; }
+.copy:hover, .copy:focus-visible { border-color: #7c939f; outline: none; }
+.copy::after { content: 'Copy'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font: 0.75rem system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #a4adb5; border: 1px solid #353b40; border-radius: 4px; padding: 3px 8px; user-select: none; }
+.copy[data-state=copied]::after { content: 'Copied'; color: #111315; background: #a9d1e8; border-color: #a9d1e8; }
 a { color: #a9d1e8; text-underline-offset: 3px; overflow-wrap: anywhere; }
 a:hover, a:focus { color: #fff; }
 ol { padding-left: 24px; }
@@ -321,7 +325,7 @@ footer { margin-top: 32px; }
 <h2>Set up once</h2>
 <ol>
 <li>In Kodi, open <strong>Settings → File manager → Add source</strong> and enter this address:
-<code>{base_url}</code></li>
+<code class="copy" data-copy tabindex="0" role="button" aria-label="Copy repository address">{base_url}</code></li>
 <li>Open <strong>Add-ons → Install from zip file</strong>, select that source, and install <strong>{repository_name}</strong>. Enable Unknown sources if Kodi asks.</li>
 <li>Choose <strong>Install from repository → jelq repository</strong> to install jelq and the skin.</li>
 </ol>
@@ -332,6 +336,29 @@ footer { margin-top: 32px; }
 </ul>
 </main>
 <footer>Selected upstream releases · No GitHub sign-in required</footer>
+<script>
+// Copy the source address on click or keyboard activation; selection remains the fallback.
+document.querySelectorAll('[data-copy]').forEach(function (block) {
+  var timer;
+  function copy() {
+    var range = document.createRange();
+    range.selectNodeContents(block);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(block.textContent.trim()).then(function () {
+      block.dataset.state = 'copied';
+      clearTimeout(timer);
+      timer = setTimeout(function () { delete block.dataset.state; }, 1600);
+    }, function () {});
+  }
+  block.addEventListener('click', copy);
+  block.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); copy(); }
+  });
+});
+</script>
 </body>
 </html>
 """
