@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import io
 import re
@@ -12,10 +14,12 @@ from tools import catalog
 
 REPOSITORY_MANIFEST = (catalog.ROOT / 'repository.jelq' / 'addon.xml').read_bytes()
 REPOSITORY_VERSION = ET.fromstring(REPOSITORY_MANIFEST).get('version')  # noqa: S314 - local manifest.
+if REPOSITORY_VERSION is None:
+  raise RuntimeError('The local repository manifest must declare a version.')
 REPOSITORY_ZIP = f'repository.jelq-{REPOSITORY_VERSION}.zip'
 
 
-def manifest(addon_id='script.jelq', version='0.1.0', assets=''):
+def manifest(addon_id: str = 'script.jelq', version: str = '0.1.0', assets: str = '') -> bytes:
   return (
     f'<addon id="{addon_id}" version="{version}" name="Test" provider-name="ftc2">'
     f'<extension point="xbmc.addon.metadata"><assets>{assets}</assets></extension>'
@@ -23,7 +27,12 @@ def manifest(addon_id='script.jelq', version='0.1.0', assets=''):
   ).encode()
 
 
-def zip_bytes(addon_id='script.jelq', version='0.1.0', extras=None, assets=''):
+def zip_bytes(
+  addon_id: str = 'script.jelq',
+  version: str = '0.1.0',
+  extras: dict[str, str | bytes] | None = None,
+  assets: str = '',
+) -> bytes:
   output = io.BytesIO()
   with zipfile.ZipFile(output, 'w') as archive:
     archive.writestr(addon_id + '/addon.xml', manifest(addon_id, version, assets))
@@ -41,7 +50,12 @@ def root(tmp_path: Path) -> Path:
   return tmp_path
 
 
-def import_zip(root, version='0.1.0', extras=None, assets=''):
+def import_zip(
+  root: Path,
+  version: str = '0.1.0',
+  extras: dict[str, str | bytes] | None = None,
+  assets: str = '',
+) -> tuple[Path, bytes]:
   data = zip_bytes(version=version, extras=extras, assets=assets)
   source = root / 'input.zip'
   source.write_bytes(data)
@@ -51,7 +65,7 @@ def import_zip(root, version='0.1.0', extras=None, assets=''):
 @pytest.mark.parametrize(
   ('expected_id', 'expected_version'), [('skin.jelq', '0.1.0'), ('script.jelq', '0.2.0')]
 )
-def test_rejects_wrong_identity_or_version(expected_id, expected_version):
+def test_rejects_wrong_identity_or_version(expected_id: str, expected_version: str) -> None:
   with pytest.raises(catalog.CatalogError):
     catalog.Package(zip_bytes(), expected_id, expected_version)
 
@@ -68,13 +82,13 @@ def test_rejects_wrong_identity_or_version(expected_id, expected_version):
     'script.jelq/NUL.txt',
   ],
 )
-def test_rejects_traversal_absolute_and_wrong_roots(path):
+def test_rejects_traversal_absolute_and_wrong_roots(path: str) -> None:
   with pytest.raises(catalog.CatalogError):
     catalog.Package(zip_bytes(extras={path: 'bad'}))
 
 
 @pytest.mark.parametrize('unsafe', [b'script.jelq\\bad', b'script.jelq/ba\x00'])
-def test_original_archive_names_are_checked_before_zipfile_normalizes_them(unsafe):
+def test_original_archive_names_are_checked_before_zipfile_normalizes_them(unsafe: bytes) -> None:
   data = zip_bytes(extras={'script.jelq/bad': 'bad'})
   with pytest.raises(catalog.CatalogError):
     catalog.Package(data.replace(b'script.jelq/bad', unsafe))
@@ -87,12 +101,14 @@ def test_original_archive_names_are_checked_before_zipfile_normalizes_them(unsaf
     {'script.jelq/resources': 'file', 'script.jelq/resources/icon.png': b'image'},
   ],
 )
-def test_rejects_case_collisions_and_file_directory_collisions(extras):
+def test_rejects_case_collisions_and_file_directory_collisions(
+  extras: dict[str, str | bytes],
+) -> None:
   with pytest.raises(catalog.CatalogError):
     catalog.Package(zip_bytes(extras=extras))
 
 
-def test_rejects_duplicate_paths():
+def test_rejects_duplicate_paths() -> None:
   output = io.BytesIO(zip_bytes())
   with zipfile.ZipFile(output, 'a') as archive, pytest.warns(UserWarning, match='Duplicate name'):
     archive.writestr('script.jelq/addon.xml', manifest())
@@ -100,7 +116,7 @@ def test_rejects_duplicate_paths():
     catalog.Package(output.getvalue())
 
 
-def test_rejects_symlink():
+def test_rejects_symlink() -> None:
   output = io.BytesIO(zip_bytes())
   with zipfile.ZipFile(output, 'a') as archive:
     member = zipfile.ZipInfo('script.jelq/link')
@@ -114,18 +130,18 @@ def test_rejects_symlink():
 @pytest.mark.parametrize(
   'asset', ['resources/missing.png', '../outside', 'https://example.com/image.png']
 )
-def test_assets_must_be_present_and_safe(asset):
+def test_assets_must_be_present_and_safe(asset: str) -> None:
   with pytest.raises(catalog.CatalogError):
     catalog.Package(zip_bytes(assets=f'<icon>{asset}</icon>'))
 
 
 @pytest.mark.parametrize('version', ['1.0', '1.0.0-beta1', '1.00.0', '../1.0.0'])
-def test_only_numeric_canonical_versions_allowed(version):
+def test_only_numeric_canonical_versions_allowed(version: str) -> None:
   with pytest.raises(catalog.CatalogError):
     catalog.Package(zip_bytes(version=version))
 
 
-def test_import_is_byte_preserving_idempotent_and_immutable(root):
+def test_import_is_byte_preserving_idempotent_and_immutable(root: Path) -> None:
   target, original = import_zip(root)
   assert target.read_bytes() == original
   assert target == import_zip(root)[0]
@@ -135,14 +151,14 @@ def test_import_is_byte_preserving_idempotent_and_immutable(root):
 
 
 @pytest.mark.parametrize('addon_id', ['repository.jelq', 'script.unrelated'])
-def test_only_the_two_approved_addons_can_be_imported(root, addon_id):
+def test_only_the_two_approved_addons_can_be_imported(root: Path, addon_id: str) -> None:
   source = root / 'input.zip'
   source.write_bytes(zip_bytes(addon_id=addon_id))
   with pytest.raises(catalog.CatalogError, match=r'Only script\.jelq and skin\.jelq'):
     catalog.import_package(source, addon_id, '0.1.0', root)
 
 
-def test_build_catalog_latest_checksum_assets_and_old_packages(root):
+def test_build_catalog_latest_checksum_assets_and_old_packages(root: Path) -> None:
   old_path, old_data = import_zip(root, '0.2.9')
   new_path, new_data = import_zip(
     root,
@@ -170,7 +186,7 @@ def test_build_catalog_latest_checksum_assets_and_old_packages(root):
   assert (site / '.nojekyll').exists()
 
 
-def test_repository_zip_is_deterministic_and_build_cleans_stale_output(root):
+def test_repository_zip_is_deterministic_and_build_cleans_stale_output(root: Path) -> None:
   site = catalog.build(root)
   first = (site / REPOSITORY_ZIP).read_bytes()
   (site / 'stale.txt').write_text('old generated file')
@@ -181,7 +197,7 @@ def test_repository_zip_is_deterministic_and_build_cleans_stale_output(root):
   assert catalog.Package(second).addon_id == 'repository.jelq'
 
 
-def test_bootstrap_zip_is_visible_to_kodi_http_directory(root):
+def test_bootstrap_zip_is_visible_to_kodi_http_directory(root: Path) -> None:
   import_zip(root)
   site = catalog.build(root)
   # Kodi 21.3 HTTPDirectory.cpp requires href first and a filename label
@@ -199,12 +215,13 @@ def test_bootstrap_zip_is_visible_to_kodi_http_directory(root):
 
 
 @pytest.mark.parametrize('tag', ['info', 'checksum'])
-def test_repository_index_is_outside_the_browsed_root(root, tag):
+def test_repository_index_is_outside_the_browsed_root(root: Path, tag: str) -> None:
   # Browsing the root to install the bootstrap ZIP caches its listing; Kodi
   # then fails any root file absent from that listing without a request.
   site = catalog.build(root)
   installed = catalog.Package((site / REPOSITORY_ZIP).read_bytes()).manifest
   url = installed.findtext("extension[@point='xbmc.addon.repository']/dir/" + tag)
+  assert url is not None
   path = url[len(catalog.BASE_URL) :]
   assert url.startswith(catalog.BASE_URL)
   assert '/' in path
@@ -213,7 +230,7 @@ def test_repository_index_is_outside_the_browsed_root(root, tag):
   assert not (site / 'addons.xml.md5').exists()
 
 
-def test_build_rejects_repository_index_in_the_browsed_root(root):
+def test_build_rejects_repository_index_in_the_browsed_root(root: Path) -> None:
   source = root / 'repository.jelq/addon.xml'
   source.write_bytes(
     REPOSITORY_MANIFEST.replace(b'jelq.github.io/addons/addons.xml', b'jelq.github.io/addons.xml')
@@ -222,7 +239,7 @@ def test_build_rejects_repository_index_in_the_browsed_root(root):
     catalog.build(root)
 
 
-def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(root):
+def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(root: Path) -> None:
   import_zip(root, '0.2.9')
   import_zip(root, '0.2.10')
   site = catalog.build(root)
@@ -238,7 +255,7 @@ def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(root):
     assert package.with_name(package.name + '.sha256').read_bytes() == expected
 
 
-def test_failed_build_preserves_previous_site(root):
+def test_failed_build_preserves_previous_site(root: Path) -> None:
   site = catalog.build(root)
   before = (site / 'addons/addons.xml').read_bytes()
   package_dir = root / 'packages/script.jelq'
@@ -249,7 +266,7 @@ def test_failed_build_preserves_previous_site(root):
   assert (site / 'addons/addons.xml').read_bytes() == before
 
 
-def test_metadata_cannot_overwrite_package(root):
+def test_metadata_cannot_overwrite_package(root: Path) -> None:
   import_zip(
     root,
     assets='<icon>script.jelq-0.1.0.zip</icon>',
@@ -259,7 +276,7 @@ def test_metadata_cannot_overwrite_package(root):
     catalog.build(root)
 
 
-def test_metadata_cannot_overwrite_package_hash(root):
+def test_metadata_cannot_overwrite_package_hash(root: Path) -> None:
   filename = 'script.jelq-0.1.0.zip.sha256'
   import_zip(
     root, assets=f'<icon>{filename}</icon>', extras={'script.jelq/' + filename: b'fake digest'}

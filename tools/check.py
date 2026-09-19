@@ -21,6 +21,7 @@ def _uv_executable() -> str:
 
 def _quality_commands() -> tuple[Command, ...]:
   return (
+    ('Type checking', (sys.executable, '-m', 'mypy', '.')),
     ('Lint', (sys.executable, '-m', 'ruff', 'check')),
     ('Formatting', (sys.executable, '-m', 'ruff', 'format', '--check')),
     ('Tests', (sys.executable, '-m', 'pytest', '-q')),

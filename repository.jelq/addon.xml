@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="repository.jelq" name="jelq repository" version="1.0.1" provider-name="jelq contributors">
+<addon id="repository.jelq" name="jelq repository" version="1.0.2" provider-name="jelq contributors">
   <extension point="xbmc.addon.repository" name="jelq repository">
     <dir>
       <info>https://ftc2.github.io/jelq.github.io/addons/addons.xml</info>
@@ -10,7 +10,7 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_GB">Install and update jelq and its companion skin</summary>
-    <description lang="en_GB">Official jelq packages for Kodi 21 and later, distributed through GitHub Pages.</description>
+    <description lang="en_GB">Official jelq packages for Kodi 21.3, distributed through GitHub Pages.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>
     <source>https://github.com/ftc2/jelq.github.io</source>

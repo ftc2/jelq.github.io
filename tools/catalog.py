@@ -6,6 +6,8 @@ Python 3.8+, standard library only. Run from any working directory:
   python tools/catalog.py build
 """
 
+from __future__ import annotations
+
 import argparse
 import copy
 import hashlib
@@ -19,6 +21,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path, PurePosixPath
+from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = 'https://ftc2.github.io/jelq.github.io/'
@@ -38,20 +41,20 @@ class CatalogError(ValueError):
   """A package cannot be safely or consistently published."""
 
 
-def version_key(version):
+def version_key(version: str) -> tuple[int, ...]:
   if not VERSION_PATTERN.fullmatch(version):
     message = f'Public package versions must be canonical numeric X.Y.Z: {version!r}'
     raise CatalogError(message)
   return tuple(int(part) for part in version.split('.'))
 
 
-def validate_id(addon_id):
+def validate_id(addon_id: str) -> None:
   if not ID_PATTERN.fullmatch(addon_id) or addon_id in ('.', '..'):
     message = f'Invalid add-on ID: {addon_id!r}'
     raise CatalogError(message)
 
 
-def safe_path(value, context='archive path'):
+def safe_path(value: str, context: str = 'archive path') -> PurePosixPath:
   """Reject platform-dependent, absolute, and traversal paths."""
   if (
     not value
@@ -75,7 +78,7 @@ def safe_path(value, context='archive path'):
   return PurePosixPath(value)
 
 
-def read_manifest(data):
+def read_manifest(data: bytes) -> ET.Element:
   if b'<!DOCTYPE' in data.upper() or b'<!ENTITY' in data.upper():
     raise CatalogError('XML document types and entity declarations are not allowed')
   try:
@@ -93,8 +96,8 @@ def read_manifest(data):
   return manifest
 
 
-def asset_paths(manifest):
-  paths = set()
+def asset_paths(manifest: ET.Element) -> list[str]:
+  paths: set[str] = set()
   for assets in manifest.findall("./extension[@point='xbmc.addon.metadata']/assets"):
     for asset in assets:
       if asset.text and asset.text.strip():
@@ -105,9 +108,14 @@ def asset_paths(manifest):
 
 
 class Package:
-  def __init__(self, data, expected_id=None, expected_version=None):  # noqa: C901, PLR0912, PLR0915 - one audited pass over the archive.
+  def __init__(  # noqa: C901, PLR0912, PLR0915 - one audited pass over the archive.
+    self,
+    data: bytes,
+    expected_id: str | None = None,
+    expected_version: str | None = None,
+  ) -> None:
     self.data = data
-    self.files = {}
+    self.files: dict[str, bytes] = {}
     try:
       with zipfile.ZipFile(io.BytesIO(data)) as archive:
         members = archive.infolist()
@@ -163,8 +171,8 @@ class Package:
         if manifest_data is None:
           raise CatalogError('Package has no addon.xml at its root')
         self.manifest = read_manifest(manifest_data)
-        self.addon_id = self.manifest.get('id')
-        self.version = self.manifest.get('version')
+        self.addon_id = self.manifest.attrib['id']
+        self.version = self.manifest.attrib['version']
         if root != self.addon_id:
           raise CatalogError('Archive root does not match addon.xml ID')
         if expected_id is not None and self.addon_id != expected_id:
@@ -175,7 +183,7 @@ class Package:
             f'Package version {self.version} does not match expected version {expected_version}'
           )
           raise CatalogError(message)
-        self.assets = {}
+        self.assets: dict[str, bytes] = {}
         for asset in asset_paths(self.manifest):
           content = self.files.get(self.addon_id + '/' + asset)
           if content is None:
@@ -187,11 +195,11 @@ class Package:
       raise CatalogError(message) from error
 
   @property
-  def filename(self):
+  def filename(self) -> str:
     return f'{self.addon_id}-{self.version}.zip'
 
 
-def require_local_directory(path, root):
+def require_local_directory(path: Path, root: Path) -> None:
   """Keep filesystem writes within the chosen repository, without symlinks."""
   root = root.resolve()
   try:
@@ -210,7 +218,7 @@ def require_local_directory(path, root):
       raise CatalogError(message)
 
 
-def import_package(zip_path, addon_id, version, root=ROOT):
+def import_package(zip_path: Path, addon_id: str, version: str, root: Path = ROOT) -> Path:
   root = Path(root).resolve()
   validate_id(addon_id)
   version_key(version)
@@ -233,7 +241,7 @@ def import_package(zip_path, addon_id, version, root=ROOT):
   return target
 
 
-def repository_package(root):
+def repository_package(root: Path) -> Package:
   directory = root / REPOSITORY_ID
   require_local_directory(directory, root)
   if not directory.is_dir():
@@ -255,8 +263,8 @@ def repository_package(root):
   return Package(output.getvalue(), REPOSITORY_ID)
 
 
-def load_packages(root):
-  packages = []
+def load_packages(root: Path) -> list[Package]:
+  packages: list[Package] = []
   directory = root / 'packages'
   require_local_directory(directory, root)
   for source in sorted(directory.glob('*/*.zip')):
@@ -275,7 +283,7 @@ def load_packages(root):
   return packages
 
 
-def render_index(latest, repository):
+def render_index(latest: dict[str, Package], repository: Package) -> bytes:
   # Kodi's HTTP directory parser requires href first on the bootstrap anchor
   # and its plain filename as the label; retain that order when styling it.
   links = []
@@ -373,13 +381,13 @@ document.querySelectorAll('[data-copy]').forEach(function (block) {
   return template.encode('utf-8')
 
 
-def write_package(directory, package):
+def write_package(directory: Path, package: Package) -> None:
   (directory / package.filename).write_bytes(package.data)
   digest = hashlib.sha256(package.data).hexdigest().encode('ascii') + b'\n'
   (directory / (package.filename + '.sha256')).write_bytes(digest)
 
 
-def check_repository_urls(manifest, output):
+def check_repository_urls(manifest: ET.Element, output: Path) -> None:
   """Require repository URLs to resolve to generated files outside the browsed root."""
   directory = manifest.find("extension[@point='xbmc.addon.repository']/dir")
   if directory is None:
@@ -404,12 +412,12 @@ def check_repository_urls(manifest, output):
       raise CatalogError(message)
 
 
-def build(root=ROOT):
+def build(root: Path = ROOT) -> Path:
   root = Path(root).resolve()
   destination = root / 'site'
   require_local_directory(destination, root)
   packages = load_packages(root)
-  latest = {}
+  latest: dict[str, Package] = {}
   for package in packages:
     current = latest.get(package.addon_id)
     if current is None or version_key(package.version) > version_key(current.version):
@@ -452,7 +460,7 @@ def build(root=ROOT):
   return destination
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> int:
   parser = argparse.ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
   )

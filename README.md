@@ -8,7 +8,7 @@ remain private; the packaged Python, XML, and assets are public downloads.
 
 File source: **https://ftc2.github.io/jelq.github.io/**
 
-1. In Kodi 21 or later, open **Settings → File manager → Add source** and enter
+1. In Kodi 21.3, open **Settings → File manager → Add source** and enter
    the URL above. Give the source a name such as `jelq`.
 2. Open **Add-ons → Install from zip file**, select that source, and install
    the `repository.jelq` ZIP. Enable **Unknown sources** if Kodi requests it.
@@ -81,10 +81,10 @@ uv run python tools/catalog.py import /path/script.jelq-X.Y.Z.zip --addon-id scr
 uv run python tools/catalog.py build
 ```
 
-Development checks mirror the `jelq` source repository. Initialize the locked
-environment with `uv sync --frozen`, apply automatic fixes with
-`uv run --frozen python -m tools.fix`, and run the quality tier (Ruff lint and
-formatting, pytest) before submitting changes:
+Development checks use the same tier structure and Ruff style as the `jelq`
+source repository. Initialize the locked environment with `uv sync --frozen`,
+apply automatic fixes with `uv run --frozen python -m tools.fix`, and run the
+quality tier (mypy, Ruff lint and formatting, pytest) before submitting changes:
 
 ```sh
 uv run --frozen python -m tools.check
