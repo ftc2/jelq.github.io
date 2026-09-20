@@ -335,7 +335,7 @@ footer { margin-top: 32px; }
 <li>In Kodi, open <strong>Settings → File manager → Add source</strong> and enter this address:
 <code class="copy" data-copy tabindex="0" role="button" aria-label="Copy repository address">{base_url}</code></li>
 <li>Open <strong>Add-ons → Install from zip file</strong>, select that source, and install <strong>{repository_name}</strong>. Enable Unknown sources if Kodi asks.</li>
-<li>Choose <strong>Install from repository → jelq repository</strong> to install jelq and the skin.</li>
+<li>Choose <strong>Install from repository → jelq repository → Video add-ons → jelq → Install</strong>. Kodi will offer to install and enable the required <strong>jelq skin</strong>; you can also do so manually from <strong>jelq repository → Look and feel → Skin</strong>.</li>
 </ol>
 <p><a href="{repository_href}" class="download">{repository_name}</a></p>
 <h2>Latest packages</h2>

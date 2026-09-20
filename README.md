@@ -12,12 +12,11 @@ File source: **https://ftc2.github.io/jelq.github.io/**
    the URL above. Give the source a name such as `jelq`.
 2. Open **Add-ons → Install from zip file**, select that source, and install
    the `repository.jelq` ZIP. Enable **Unknown sources** if Kodi requests it.
-3. Open **Install from repository → jelq repository**. Install the **jelq**
-   companion skin under **Look and feel → Skin**, then switch Kodi to it when
-   prompted.
-4. Install **jelq** under **Video add-ons**. The script add-on requires a
-   compatible companion-skin version, so install or update the skin first.
-5. Launch jelq from Video add-ons. Kodi can now discover future versioned
+3. Open **Install from repository → jelq repository → Video add-ons →
+   jelq → Install**. Kodi will offer to install and enable the required **jelq
+   skin**; you can also do so manually from **jelq repository → Look and feel →
+   Skin**.
+4. Launch jelq from Video add-ons. Kodi can now discover future versioned
    updates through this repository.
 
 The website also provides direct ZIP links for manual installation.
