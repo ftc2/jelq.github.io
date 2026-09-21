@@ -59,8 +59,11 @@ In the appropriate **upstream** source repository:
 changes `repository.jelq` or the tooling that builds and checks it
 (`tools/repository_scope.py` decides), and on manual runs. A checker failure then
 blocks that deployment. Package imports skip it: they cannot change the checked
-add-on, and the checker downloads Kodi's official indexes through a
-rate-limited redirector that can stall it for minutes.
+add-on, and the checker depends on Kodi's official index mirrors being reachable.
+The checker runs through `tools/kodi_checker.py`, which fetches those indexes
+directly from community mirrors rather than through the rate-limited
+`mirrors.kodi.tv` redirector, and fails within seconds, naming the sources tried,
+if none answers.
 
 The moving `development` releases do not publish here. Ordinary fork builds and
 pull requests never publish here. A given add-on version is immutable: retrying
