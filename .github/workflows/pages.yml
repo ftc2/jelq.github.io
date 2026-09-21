@@ -16,7 +16,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Kodi's add-on checker can back off for minutes when the index redirector
+    # rate-limits it; leave room for it to report rather than be cut off.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,8 +34,23 @@ jobs:
         run: uv run --frozen python -m tools.check quality
       - name: Check lockfile
         run: uv run --frozen python -m tools.check dependencies
+      # Kodi's add-on checker validates only repository.jelq and downloads its
+      # official indexes from third-party mirrors that can stall or fail it. Run
+      # it when the repository add-on or its tooling changed, so it still gates that
+      # deployment, and skip it for package imports, which cannot affect it.
+      - name: Decide whether the repository add-on needs Kodi's checker
+        id: scope
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: uv run --frozen python -m tools.repository_scope --base "$BASE" --head "$HEAD"
       - name: Build site and validate repository add-on for Kodi Omega
+        if: github.event_name == 'workflow_dispatch' || steps.scope.outputs.check == 'true'
         run: uv run --frozen python -m tools.check package
+      - name: Build site
+        if: github.event_name != 'workflow_dispatch' && steps.scope.outputs.check != 'true'
+        run: uv run --frozen python -m tools.catalog build
       - name: Upload Pages site
         if: github.repository == 'ftc2/jelq.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

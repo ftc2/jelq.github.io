@@ -55,6 +55,13 @@ In the appropriate **upstream** source repository:
    that ZIP to this repository. **Kodi repository** regenerates the catalog and
    deploys Pages.
 
+**Kodi repository** runs Kodi's add-on checker only when a push or pull request
+changes `repository.jelq` or the tooling that builds and checks it
+(`tools/repository_scope.py` decides), and on manual runs. A checker failure then
+blocks that deployment. Package imports skip it: they cannot change the checked
+add-on, and the checker downloads Kodi's official indexes through a
+rate-limited redirector that can stall it for minutes.
+
 The moving `development` releases do not publish here. Ordinary fork builds and
 pull requests never publish here. A given add-on version is immutable: retrying
 the same ZIP is safe, but different bytes require a new version. Script and skin

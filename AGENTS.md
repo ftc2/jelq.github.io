@@ -13,8 +13,8 @@
   history must stay out.
 - Keep approved, immutable add-on ZIPs under `packages/`. Do not copy source
   checkouts, private notes, local Kodi profiles, credentials, or CI logs here.
-- Host tooling uses Python 3.8 and `uv`. `tools/catalog.py` uses only the standard
-  library; mypy, Ruff, pytest, and Kodi's add-on checker are locked development
+- Host tooling uses Python 3.8 and `uv`. `tools/catalog.py` and
+  `tools/repository_scope.py` use only the standard library; mypy, Ruff, pytest, and Kodi's add-on checker are locked development
   tools. Follow `ruff.toml`, which matches the `jelq` source repository's style.
 - `tools/catalog.py import ZIP --addon-id ID --version X.Y.Z` validates and imports
   an approved package. Never replace different bytes at a published version.
