@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import gzip
-import inspect
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,10 +14,20 @@ from requests.adapters import HTTPAdapter  # type: ignore[import-untyped]
 from tools import kodi_checker
 
 INDEX_PATH = '/addons/omega/addons.xml.gz'
-INDEX = gzip.compress(b'<addons><addon id="script.example" version="1.0.0"/></addons>')
-# A well-formed gzip stream whose XML is not an index; the checker sets
-# `addons = []` before it fails to parse this.
-NOT_AN_INDEX = gzip.compress(b'<html>Service unavailable')
+INDEX_XML = b"""<addons>
+  <addon id="script.example" version="1.0.0"/>
+  <addon id="script.example" version="2.0.0"/>
+  <addon id="script.consumer" version="1.0.0">
+    <requires><import addon="script.example" version="1.0.0"/></requires>
+  </addon>
+</addons>"""
+INDEX = gzip.compress(INDEX_XML)
+BAD_RESPONSES = {
+  'wrong_root': gzip.compress(b'<html><body>Service unavailable</body></html>'),
+  'invalid_xml': gzip.compress(b'<addons>'),
+  'truncated_gzip': INDEX[: len(INDEX) // 2],
+  'not_gzip': b'not a gzip stream',
+}
 # Unpatched, the adapter's backoff turns one bad source into minutes.
 QUICK_FAILURE_SECONDS = 10
 
@@ -46,7 +55,7 @@ def start_source() -> Iterator[Callable[[str], Source]]:
           self.send_response(503)
           self.end_headers()
           return
-        body = INDEX if source.behavior == 'ok' else NOT_AN_INDEX
+        body = INDEX if source.behavior == 'ok' else BAD_RESPONSES[source.behavior]
         self.send_response(200)
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
@@ -83,17 +92,58 @@ def use_sources(monkeypatch: pytest.MonkeyPatch, mirrors: list[Source], redirect
   return redirector.base + INDEX_PATH
 
 
+def addon_state(addon: Any) -> dict[str, Any]:
+  """Return every attribute, expanding dependency objects for comparison."""
+  state: dict[str, Any] = vars(addon).copy()
+  state['dependencies'] = [vars(dependency).copy() for dependency in addon.dependencies]
+  return state
+
+
 def test_the_checker_internals_this_relies_on_are_unchanged() -> None:
-  # These are private to kodi-addon-checker 0.0.36. If an upgrade changes them,
-  # revisit tools/kodi_checker.py rather than letting the patch silently misfire.
+  # These are private to kodi-addon-checker 0.0.36. The contract test below
+  # separately compares repositories built by the upstream and patched loaders.
   assert check_addon.ROOT_URL == kodi_checker.REDIRECTOR + '/addons/{branch}/addons.xml.gz'
-  assert list(inspect.signature(Repository.__init__).parameters) == ['self', 'version', 'path']
   assert isinstance(Repository._adapter, HTTPAdapter)  # noqa: SLF001
-  source = inspect.getsource(Repository.__init__)
-  assert 'except requests.exceptions.RequestException:' in source
-  # The partial-state cleanup relies on this ordering.
-  assert source.index('self.addons = []') < source.index('ET.fromstring(content)')
-  assert 'for addon in self.addons' in inspect.getsource(Repository.__contains__)
+  assert hasattr(Repository, '_session')
+
+
+def test_patched_loader_matches_the_upstream_repository_contract(
+  monkeypatch: pytest.MonkeyPatch, start_source: Callable[[str], Source]
+) -> None:
+  source, redirector = start_source('ok'), start_source('error')
+  reference = Repository('omega', source.base + INDEX_PATH)
+  original_get = Repository._session.get  # noqa: SLF001
+  timeouts: list[Any] = []
+
+  def get(url: str, **kwargs: Any) -> Any:
+    timeouts.append(kwargs.get('timeout'))
+    return original_get(url, **kwargs)
+
+  monkeypatch.setattr(Repository._session, 'get', get)  # noqa: SLF001
+  path = use_sources(monkeypatch, [source], redirector)
+
+  repository = Repository('omega', path)
+
+  assert vars(repository).keys() == vars(reference).keys()
+  assert repository.version == reference.version
+  assert repository.path == reference.path
+  assert timeouts == [kodi_checker.SOURCE_TIMEOUT]
+  assert [addon_state(addon) for addon in repository.addons] == [
+    addon_state(addon) for addon in reference.addons
+  ]
+  assert 'script.example' in repository
+  assert repository.find('script.example').version == '2.0.0'
+  assert [addon.id for addon in repository.rdepends('script.example')] == ['script.consumer']
+
+
+def test_upstream_treats_wrong_root_xml_as_an_empty_index(
+  start_source: Callable[[str], Source],
+) -> None:
+  wrong = start_source('wrong_root')
+
+  repository = Repository('omega', wrong.base + INDEX_PATH)
+
+  assert repository.addons == []
 
 
 def test_a_failing_mirror_is_skipped_for_the_next(
@@ -108,10 +158,11 @@ def test_a_failing_mirror_is_skipped_for_the_next(
   assert (down.requests, up.requests, redirector.requests) == (1, 1, 0)
 
 
-def test_a_mirror_returning_something_else_does_not_count_as_empty(
-  monkeypatch: pytest.MonkeyPatch, start_source: Callable[[str], Source]
+@pytest.mark.parametrize('behavior', BAD_RESPONSES)
+def test_bad_content_is_skipped_instead_of_counting_as_an_empty_index(
+  behavior: str, monkeypatch: pytest.MonkeyPatch, start_source: Callable[[str], Source]
 ) -> None:
-  wrong, up, redirector = start_source('garbage'), start_source('ok'), start_source('error')
+  wrong, up, redirector = start_source(behavior), start_source('ok'), start_source('error')
   path = use_sources(monkeypatch, [wrong, up], redirector)
 
   repository = Repository('omega', path)
@@ -133,7 +184,7 @@ def test_the_redirector_is_the_last_resort(
 def test_no_source_fails_quickly_and_names_what_was_tried(
   monkeypatch: pytest.MonkeyPatch, start_source: Callable[[str], Source]
 ) -> None:
-  down, wrong, redirector = start_source('error'), start_source('garbage'), start_source('error')
+  down, wrong, redirector = start_source('error'), start_source('wrong_root'), start_source('error')
   path = use_sources(monkeypatch, [down, wrong], redirector)
 
   started = time.monotonic()

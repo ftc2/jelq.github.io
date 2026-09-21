@@ -62,8 +62,8 @@ blocks that deployment. Package imports skip it: they cannot change the checked
 add-on, and the checker depends on Kodi's official index mirrors being reachable.
 The checker runs through `tools/kodi_checker.py`, which fetches those indexes
 directly from community mirrors rather than through the rate-limited
-`mirrors.kodi.tv` redirector, and fails within seconds, naming the sources tried,
-if none answers.
+`mirrors.kodi.tv` redirector. It uses short per-source timeouts and, if no source
+answers with a valid index, fails clearly and names the sources tried.
 
 The moving `development` releases do not publish here. Ordinary fork builds and
 pull requests never publish here. A given add-on version is immutable: retrying

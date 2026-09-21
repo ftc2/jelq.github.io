@@ -17,6 +17,7 @@ from tools import repository_scope
     ['tools/catalog.py'],
     ['tools/check_package.py'],
     ['tools/kodi_checker.py'],
+    ['tools/repository_scope.py'],
     ['uv.lock'],
     ['.github/workflows/pages.yml'],
     ['packages/skin.jelq/skin.jelq-0.3.2.zip', 'tools/check.py'],

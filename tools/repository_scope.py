@@ -32,6 +32,7 @@ RELEVANT_PATHS = (
   'tools/check.py',
   'tools/check_package.py',
   'tools/kodi_checker.py',
+  'tools/repository_scope.py',
   'pyproject.toml',
   'uv.lock',
   '.github/workflows/pages.yml',

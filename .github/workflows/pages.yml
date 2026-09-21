@@ -17,8 +17,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # Leave room for Kodi's add-on checker to report a network failure rather
-    # than be cut off: a mirror that hangs costs up to the checker's 30 s
-    # connect and read timeouts before the next one is tried.
+    # than be cut off: it loads multiple branch indexes, and each may traverse
+    # several sources with bounded per-source timeouts.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
