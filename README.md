@@ -85,9 +85,9 @@ catalog tool itself uses only the standard library. Import approved packages and
 build the site with:
 
 ```sh
-uv run python tools/catalog.py import /path/skin.jelq-X.Y.Z.zip --addon-id skin.jelq --version X.Y.Z
-uv run python tools/catalog.py import /path/script.jelq-X.Y.Z.zip --addon-id script.jelq --version X.Y.Z
-uv run python tools/catalog.py build
+uv run --frozen --no-dev python -m tools.catalog import /path/skin.jelq-X.Y.Z.zip --addon-id skin.jelq --version X.Y.Z
+uv run --frozen --no-dev python -m tools.catalog import /path/script.jelq-X.Y.Z.zip --addon-id script.jelq --version X.Y.Z
+uv run --frozen --no-dev python -m tools.catalog build
 ```
 
 Development checks use the same tier structure and Ruff style as the `jelq`
