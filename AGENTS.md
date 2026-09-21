@@ -23,6 +23,11 @@
   `uv run --frozen python -m tools.check full` before pushing; the full tier also
   checks the lockfile, builds `site/`, and runs Kodi's add-on checker (network).
   These repository-specific tiers supersede generic Python check command lists.
+- Run Kodi's add-on checker through `tools.kodi_checker` (as `tools/check_package.py`
+  does), never `python -m kodi_addon_checker` directly. It fetches Kodi's official
+  indexes straight from community mirrors instead of the rate-limited
+  `mirrors.kodi.tv` redirector, which otherwise stalls the checker for minutes and
+  fails it with a misleading `AttributeError`.
 - `site/` is generated, ignored, and is the only directory deployed to Pages.
 - Base URL: `https://ftc2.github.io/jelq.github.io/`. Keep repository metadata,
   links, and documentation consistent with it.

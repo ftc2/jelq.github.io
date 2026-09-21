@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,17 +19,25 @@ def main() -> None:
     # Only extract the archive just built here from the reviewed source directory.
     with ZipFile(installer) as archive:
       archive.extractall(temporary)
+    # tools.kodi_checker bounds the checker's downloads of Kodi's official
+    # indexes; the checker still runs from the temporary directory, so make
+    # this repository importable there.
+    environment = dict(os.environ)
+    environment['PYTHONPATH'] = os.pathsep.join(
+      filter(None, (str(ROOT), environment.get('PYTHONPATH')))
+    )
     result = subprocess.run(  # noqa: S603 -- Fixed local executable, without a shell.
       [
         sys.executable,
         '-m',
-        'kodi_addon_checker',
+        'tools.kodi_checker',
         str(Path(temporary) / REPOSITORY_ID),
         '--branch',
         'omega',
         '--enable-debug-log',
       ],
       cwd=temporary,
+      env=environment,
       check=False,
     )
   sys.exit(result.returncode)

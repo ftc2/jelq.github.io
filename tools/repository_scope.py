@@ -2,11 +2,10 @@
 Decide whether a change can alter the repository add-on Kodi's checker validates.
 
 The checker validates only `repository.jelq`. It also downloads ten official Kodi
-indexes through `mirrors.kodi.tv`, a redirector that rate-limits bursts of
-requests; the checker backs off for minutes when refused and can then fail.
-Package imports never change the repository add-on, so a publish should not wait
-on those downloads; a change to the repository add-on or its tooling still has to
-pass the checker before it deploys.
+indexes from third-party mirrors, which can be slow, rate-limited or down (see
+`tools/kodi_checker.py`). Package imports never change the repository add-on, so
+a publish should not wait on those mirrors; a change to the repository add-on or
+its tooling still has to pass the checker before it deploys.
 
 Python 3.8+, standard library only. In CI:
   python -m tools.repository_scope --base SHA --head SHA
@@ -32,6 +31,7 @@ RELEVANT_PATHS = (
   'tools/catalog.py',
   'tools/check.py',
   'tools/check_package.py',
+  'tools/kodi_checker.py',
   'pyproject.toml',
   'uv.lock',
   '.github/workflows/pages.yml',

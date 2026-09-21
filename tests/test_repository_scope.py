@@ -16,6 +16,7 @@ from tools import repository_scope
     ['repository.jelq/icon.png'],
     ['tools/catalog.py'],
     ['tools/check_package.py'],
+    ['tools/kodi_checker.py'],
     ['uv.lock'],
     ['.github/workflows/pages.yml'],
     ['packages/skin.jelq/skin.jelq-0.3.2.zip', 'tools/check.py'],
