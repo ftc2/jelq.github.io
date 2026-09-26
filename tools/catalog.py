@@ -327,7 +327,7 @@ footer { margin-top: 32px; }
 <header>
 <div class="label">Kodi / public releases</div>
 <h1>jelk repository</h1>
-<p>Install jelk and its companion skin. Kodi will find new published versions through this repository.</p>
+<p>Install jelk and its skin. Kodi will find new published versions through this repository.</p>
 </header>
 <main>
 <h2>Set up once</h2>

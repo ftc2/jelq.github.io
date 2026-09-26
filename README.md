@@ -1,7 +1,7 @@
 # jelk Kodi repository
 
 Public installation packages for [jelk](https://github.com/ftc2/jelk) and its
-[companion skin](https://github.com/ftc2/jelk-skin). The source repositories may
+[skin](https://github.com/ftc2/jelk-skin). The source repositories may
 remain private; the packaged Python, XML, and assets are public downloads.
 
 ## Install in Kodi
