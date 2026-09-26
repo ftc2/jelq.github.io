@@ -12,15 +12,15 @@ from tools import repository_scope
 @pytest.mark.parametrize(
   'paths',
   [
-    ['repository.jelq/addon.xml'],
-    ['repository.jelq/icon.png'],
+    ['repository.jelk/addon.xml'],
+    ['repository.jelk/icon.png'],
     ['tools/catalog.py'],
     ['tools/check_package.py'],
     ['tools/kodi_checker.py'],
     ['tools/repository_scope.py'],
     ['uv.lock'],
     ['.github/workflows/pages.yml'],
-    ['packages/skin.jelq/skin.jelq-0.3.2.zip', 'tools/check.py'],
+    ['packages/skin.jelk/skin.jelk-0.3.2.zip', 'tools/check.py'],
   ],
 )
 def test_repository_changes_need_the_checker(paths: list[str]) -> None:
@@ -31,12 +31,12 @@ def test_repository_changes_need_the_checker(paths: list[str]) -> None:
   'paths',
   [
     [],
-    ['packages/skin.jelq/skin.jelq-0.3.2.zip'],
-    ['packages/script.jelq/script.jelq-0.3.2.zip'],
+    ['packages/skin.jelk/skin.jelk-0.3.2.zip'],
+    ['packages/script.jelk/script.jelk-0.3.2.zip'],
     ['README.md', 'AGENTS.md'],
     ['tests/test_catalog.py'],
     # A prefix match must stop at the directory boundary.
-    ['repository.jelq-notes.md'],
+    ['repository.jelk-notes.md'],
     ['tools/catalog.py.orig'],
   ],
 )
@@ -71,21 +71,21 @@ def _commit(root: Path, path: str, content: str) -> str:
 @pytest.fixture
 def history(tmp_path: Path) -> tuple[Path, str]:
   _git(tmp_path, 'init', '-q')
-  return tmp_path, _commit(tmp_path, 'repository.jelq/addon.xml', '<addon/>')
+  return tmp_path, _commit(tmp_path, 'repository.jelk/addon.xml', '<addon/>')
 
 
 def test_a_package_import_skips_the_checker(history: tuple[Path, str]) -> None:
   root, base = history
-  head = _commit(root, 'packages/skin.jelq/skin.jelq-9.9.9.zip', 'zip')
+  head = _commit(root, 'packages/skin.jelk/skin.jelk-9.9.9.zip', 'zip')
   assert repository_scope.changed_paths(base, head, root) == [
-    'packages/skin.jelq/skin.jelq-9.9.9.zip'
+    'packages/skin.jelk/skin.jelk-9.9.9.zip'
   ]
   assert repository_scope.decide(base, head, root)[0] is False
 
 
 def test_a_repository_add_on_change_runs_the_checker(history: tuple[Path, str]) -> None:
   root, base = history
-  head = _commit(root, 'repository.jelq/addon.xml', '<addon version="2"/>')
+  head = _commit(root, 'repository.jelk/addon.xml', '<addon version="2"/>')
   assert repository_scope.decide(base, head, root)[0] is True
 
 

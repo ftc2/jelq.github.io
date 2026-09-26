@@ -1,7 +1,7 @@
 """
 Decide whether a change can alter the repository add-on Kodi's checker validates.
 
-The checker validates only `repository.jelq`. It also downloads ten official Kodi
+The checker validates only `repository.jelk`. It also downloads ten official Kodi
 indexes from third-party mirrors, which can be slow, rate-limited or down (see
 `tools/kodi_checker.py`). Package imports never change the repository add-on, so
 a publish should not wait on those mirrors; a change to the repository add-on or
@@ -27,7 +27,7 @@ from typing import Iterable, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 # A trailing slash marks a directory prefix; anything else is an exact path.
 RELEVANT_PATHS = (
-  'repository.jelq/',
+  'repository.jelk/',
   'tools/catalog.py',
   'tools/check.py',
   'tools/check_package.py',

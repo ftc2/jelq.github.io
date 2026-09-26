@@ -2,7 +2,7 @@
 Import immutable Kodi packages and build an anonymous static repository.
 
 Python 3.8+, standard library only. Run from any working directory:
-  python tools/catalog.py import ZIP --addon-id script.jelq --version 0.2.1
+  python tools/catalog.py import ZIP --addon-id script.jelk --version 0.2.1
   python tools/catalog.py build
 """
 
@@ -24,12 +24,12 @@ from pathlib import Path, PurePosixPath
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_URL = 'https://ftc2.github.io/jelq.github.io/'
-REPOSITORY_ID = 'repository.jelq'
+BASE_URL = 'https://ftc2.github.io/jelk.github.io/'
+REPOSITORY_ID = 'repository.jelk'
 # Kodi caches the root listing browsed during bootstrap, then resolves the repository
 # index through that cache; files absent from the listing fail without a request.
 CATALOG_DIRECTORY = 'addons'
-PACKAGE_IDS = frozenset(('script.jelq', 'skin.jelq'))
+PACKAGE_IDS = frozenset(('script.jelk', 'skin.jelk'))
 ID_PATTERN = re.compile(r'[a-z0-9][a-z0-9._-]*\Z')
 VERSION_PATTERN = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z')
 MAX_UNCOMPRESSED_SIZE = 512 * 1024 * 1024
@@ -223,7 +223,7 @@ def import_package(zip_path: Path, addon_id: str, version: str, root: Path = ROO
   validate_id(addon_id)
   version_key(version)
   if addon_id not in PACKAGE_IDS:
-    raise CatalogError('Only script.jelq and skin.jelq may be imported')
+    raise CatalogError('Only script.jelk and skin.jelk may be imported')
   package = Package(Path(zip_path).read_bytes(), addon_id, version)
   directory = root / 'packages' / addon_id
   require_local_directory(directory, root)
@@ -245,7 +245,7 @@ def repository_package(root: Path) -> Package:
   directory = root / REPOSITORY_ID
   require_local_directory(directory, root)
   if not directory.is_dir():
-    raise CatalogError('Missing repository.jelq/ source directory')
+    raise CatalogError('Missing repository.jelk/ source directory')
   output = io.BytesIO()
   with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for source in sorted(directory.rglob('*')):
@@ -274,7 +274,7 @@ def load_packages(root: Path) -> list[Package]:
       raise CatalogError(message)
     package = Package(source.read_bytes(), expected_id=source.parent.name)
     if package.addon_id not in PACKAGE_IDS:
-      raise CatalogError('Only script.jelq and skin.jelq may be imported')
+      raise CatalogError('Only script.jelk and skin.jelk may be imported')
     if source.name != package.filename:
       message = f'Package filename disagrees with addon.xml: {source.name}'
       raise CatalogError(message)
@@ -298,7 +298,7 @@ def render_index(latest: dict[str, Package], repository: Package) -> bytes:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>jelq Kodi repository</title>
+<title>jelk Kodi repository</title>
 <style>
 :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #111315; color: #e9ebed; }
 body { max-width: 720px; margin: 0 auto; padding: 64px 24px 48px; line-height: 1.6; }
@@ -326,8 +326,8 @@ footer { margin-top: 32px; }
 <body>
 <header>
 <div class="label">Kodi / public releases</div>
-<h1>jelq repository</h1>
-<p>Install jelq and its companion skin. Kodi will find new published versions through this repository.</p>
+<h1>jelk repository</h1>
+<p>Install jelk and its companion skin. Kodi will find new published versions through this repository.</p>
 </header>
 <main>
 <h2>Set up once</h2>
@@ -335,7 +335,7 @@ footer { margin-top: 32px; }
 <li>In Kodi, open <strong>Settings → File manager → Add source</strong> and enter this address:
 <code class="copy" data-copy tabindex="0" role="button" aria-label="Copy repository address">{base_url}</code></li>
 <li>Open <strong>Add-ons → Install from zip file</strong>, select that source, and install <strong>{repository_name}</strong>. Enable Unknown sources if Kodi asks.</li>
-<li>Choose <strong>Install from repository → jelq repository → Video add-ons → jelq → Install</strong>. Kodi will offer to install and enable the required <strong>jelq skin</strong>; you can also do so manually from <strong>jelq repository → Look and feel → Skin</strong>.</li>
+<li>Choose <strong>Install from repository → jelk repository → Video add-ons → jelk → Install</strong>. Kodi will offer to install and enable the required <strong>jelk skin</strong>; you can also do so manually from <strong>jelk repository → Look and feel → Skin</strong>.</li>
 </ol>
 <p><a href="{repository_href}" class="download">{repository_name}</a></p>
 <h2>Latest packages</h2>

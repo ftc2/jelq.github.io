@@ -35,7 +35,7 @@ jobs:
         run: uv run --frozen python -m tools.check quality
       - name: Check lockfile
         run: uv run --frozen python -m tools.check dependencies
-      # Kodi's add-on checker validates only repository.jelq and downloads its
+      # Kodi's add-on checker validates only repository.jelk and downloads its
       # official indexes from third-party mirrors that can stall or fail it. Run
       # it when the repository add-on or its tooling changed, so it still gates that
       # deployment, and skip it for package imports, which cannot affect it.
@@ -53,13 +53,13 @@ jobs:
         if: github.event_name != 'workflow_dispatch' && steps.scope.outputs.check != 'true'
         run: uv run --frozen python -m tools.catalog build
       - name: Upload Pages site
-        if: github.repository == 'ftc2/jelq.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        if: github.repository == 'ftc2/jelk.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
 
   deploy:
-    if: github.repository == 'ftc2/jelq.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    if: github.repository == 'ftc2/jelk.github.io' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -12,14 +12,14 @@ import pytest
 
 from tools import catalog
 
-REPOSITORY_MANIFEST = (catalog.ROOT / 'repository.jelq' / 'addon.xml').read_bytes()
+REPOSITORY_MANIFEST = (catalog.ROOT / 'repository.jelk' / 'addon.xml').read_bytes()
 REPOSITORY_VERSION = ET.fromstring(REPOSITORY_MANIFEST).get('version')  # noqa: S314 - local manifest.
 if REPOSITORY_VERSION is None:
   raise RuntimeError('The local repository manifest must declare a version.')
-REPOSITORY_ZIP = f'repository.jelq-{REPOSITORY_VERSION}.zip'
+REPOSITORY_ZIP = f'repository.jelk-{REPOSITORY_VERSION}.zip'
 
 
-def manifest(addon_id: str = 'script.jelq', version: str = '0.1.0', assets: str = '') -> bytes:
+def manifest(addon_id: str = 'script.jelk', version: str = '0.1.0', assets: str = '') -> bytes:
   return (
     f'<addon id="{addon_id}" version="{version}" name="Test" provider-name="ftc2">'
     f'<extension point="xbmc.addon.metadata"><assets>{assets}</assets></extension>'
@@ -28,7 +28,7 @@ def manifest(addon_id: str = 'script.jelq', version: str = '0.1.0', assets: str 
 
 
 def zip_bytes(
-  addon_id: str = 'script.jelq',
+  addon_id: str = 'script.jelk',
   version: str = '0.1.0',
   extras: dict[str, str | bytes] | None = None,
   assets: str = '',
@@ -44,7 +44,7 @@ def zip_bytes(
 
 @pytest.fixture
 def root(tmp_path: Path) -> Path:
-  source = tmp_path / 'repository.jelq'
+  source = tmp_path / 'repository.jelk'
   source.mkdir()
   (source / 'addon.xml').write_bytes(REPOSITORY_MANIFEST)
   return tmp_path
@@ -59,11 +59,11 @@ def import_zip(
   data = zip_bytes(version=version, extras=extras, assets=assets)
   source = root / 'input.zip'
   source.write_bytes(data)
-  return catalog.import_package(source, 'script.jelq', version, root), data
+  return catalog.import_package(source, 'script.jelk', version, root), data
 
 
 @pytest.mark.parametrize(
-  ('expected_id', 'expected_version'), [('skin.jelq', '0.1.0'), ('script.jelq', '0.2.0')]
+  ('expected_id', 'expected_version'), [('skin.jelk', '0.1.0'), ('script.jelk', '0.2.0')]
 )
 def test_rejects_wrong_identity_or_version(expected_id: str, expected_version: str) -> None:
   with pytest.raises(catalog.CatalogError):
@@ -73,13 +73,13 @@ def test_rejects_wrong_identity_or_version(expected_id: str, expected_version: s
 @pytest.mark.parametrize(
   'path',
   [
-    'script.jelq/../outside',
+    'script.jelk/../outside',
     '/absolute',
-    'script.jelq/C:/bad',
+    'script.jelk/C:/bad',
     'another/file',
-    'script.jelq//file',
-    'script.jelq/file.',
-    'script.jelq/NUL.txt',
+    'script.jelk//file',
+    'script.jelk/file.',
+    'script.jelk/NUL.txt',
   ],
 )
 def test_rejects_traversal_absolute_and_wrong_roots(path: str) -> None:
@@ -87,18 +87,18 @@ def test_rejects_traversal_absolute_and_wrong_roots(path: str) -> None:
     catalog.Package(zip_bytes(extras={path: 'bad'}))
 
 
-@pytest.mark.parametrize('unsafe', [b'script.jelq\\bad', b'script.jelq/ba\x00'])
+@pytest.mark.parametrize('unsafe', [b'script.jelk\\bad', b'script.jelk/ba\x00'])
 def test_original_archive_names_are_checked_before_zipfile_normalizes_them(unsafe: bytes) -> None:
-  data = zip_bytes(extras={'script.jelq/bad': 'bad'})
+  data = zip_bytes(extras={'script.jelk/bad': 'bad'})
   with pytest.raises(catalog.CatalogError):
-    catalog.Package(data.replace(b'script.jelq/bad', unsafe))
+    catalog.Package(data.replace(b'script.jelk/bad', unsafe))
 
 
 @pytest.mark.parametrize(
   'extras',
   [
-    {'script.jelq/ADDON.XML': 'collision'},
-    {'script.jelq/resources': 'file', 'script.jelq/resources/icon.png': b'image'},
+    {'script.jelk/ADDON.XML': 'collision'},
+    {'script.jelk/resources': 'file', 'script.jelk/resources/icon.png': b'image'},
   ],
 )
 def test_rejects_case_collisions_and_file_directory_collisions(
@@ -111,7 +111,7 @@ def test_rejects_case_collisions_and_file_directory_collisions(
 def test_rejects_duplicate_paths() -> None:
   output = io.BytesIO(zip_bytes())
   with zipfile.ZipFile(output, 'a') as archive, pytest.warns(UserWarning, match='Duplicate name'):
-    archive.writestr('script.jelq/addon.xml', manifest())
+    archive.writestr('script.jelk/addon.xml', manifest())
   with pytest.raises(catalog.CatalogError):
     catalog.Package(output.getvalue())
 
@@ -119,7 +119,7 @@ def test_rejects_duplicate_paths() -> None:
 def test_rejects_symlink() -> None:
   output = io.BytesIO(zip_bytes())
   with zipfile.ZipFile(output, 'a') as archive:
-    member = zipfile.ZipInfo('script.jelq/link')
+    member = zipfile.ZipInfo('script.jelk/link')
     member.create_system = 3
     member.external_attr = (stat.S_IFLNK | 0o777) << 16
     archive.writestr(member, '../../outside')
@@ -146,15 +146,15 @@ def test_import_is_byte_preserving_idempotent_and_immutable(root: Path) -> None:
   assert target.read_bytes() == original
   assert target == import_zip(root)[0]
   with pytest.raises(catalog.CatalogError, match='different bytes'):
-    import_zip(root, extras={'script.jelq/new.py': 'changed'})
+    import_zip(root, extras={'script.jelk/new.py': 'changed'})
   assert target.read_bytes() == original
 
 
-@pytest.mark.parametrize('addon_id', ['repository.jelq', 'script.unrelated'])
+@pytest.mark.parametrize('addon_id', ['repository.jelk', 'script.unrelated'])
 def test_only_the_two_approved_addons_can_be_imported(root: Path, addon_id: str) -> None:
   source = root / 'input.zip'
   source.write_bytes(zip_bytes(addon_id=addon_id))
-  with pytest.raises(catalog.CatalogError, match=r'Only script\.jelq and skin\.jelq'):
+  with pytest.raises(catalog.CatalogError, match=r'Only script\.jelk and skin\.jelk'):
     catalog.import_package(source, addon_id, '0.1.0', root)
 
 
@@ -165,18 +165,18 @@ def test_build_catalog_latest_checksum_assets_and_old_packages(root: Path) -> No
     '0.2.10',
     assets='<icon>resources/icon.png</icon>',
     extras={
-      'script.jelq/resources/icon.png': b'icon bytes',
-      'script.jelq/private.py': b'only inside ZIP',
+      'script.jelk/resources/icon.png': b'icon bytes',
+      'script.jelk/private.py': b'only inside ZIP',
     },
   )
   site = catalog.build(root)
   xml = (site / 'addons/addons.xml').read_bytes()
   entries = {entry.get('id'): entry.get('version') for entry in ET.fromstring(xml)}  # noqa: S314
-  assert entries == {'repository.jelq': REPOSITORY_VERSION, 'script.jelq': '0.2.10'}
+  assert entries == {'repository.jelk': REPOSITORY_VERSION, 'script.jelk': '0.2.10'}
   # Kodi's repository protocol specifies an MD5 change marker, not a security digest.
   digest = hashlib.md5(xml).hexdigest()  # noqa: S324
   assert (site / 'addons/addons.xml.md5').read_text().strip() == digest
-  package_dir = site / 'addons' / 'script.jelq'
+  package_dir = site / 'addons' / 'script.jelk'
   assert (package_dir / old_path.name).read_bytes() == old_data
   assert (package_dir / new_path.name).read_bytes() == new_data
   assert (package_dir / 'resources/icon.png').read_bytes() == b'icon bytes'
@@ -194,7 +194,7 @@ def test_repository_zip_is_deterministic_and_build_cleans_stale_output(root: Pat
   second = (site / REPOSITORY_ZIP).read_bytes()
   assert first == second
   assert not (site / 'stale.txt').exists()
-  assert catalog.Package(second).addon_id == 'repository.jelq'
+  assert catalog.Package(second).addon_id == 'repository.jelk'
 
 
 def test_bootstrap_zip_is_visible_to_kodi_http_directory(root: Path) -> None:
@@ -211,7 +211,7 @@ def test_bootstrap_zip_is_visible_to_kodi_http_directory(root: Path) -> None:
   visible = [link for link, label, _ in matches if label.strip() == link]
   assert visible == [REPOSITORY_ZIP]
   installer = site / REPOSITORY_ZIP
-  assert catalog.Package(installer.read_bytes()).addon_id == 'repository.jelq'
+  assert catalog.Package(installer.read_bytes()).addon_id == 'repository.jelk'
 
 
 @pytest.mark.parametrize('tag', ['info', 'checksum'])
@@ -231,9 +231,9 @@ def test_repository_index_is_outside_the_browsed_root(root: Path, tag: str) -> N
 
 
 def test_build_rejects_repository_index_in_the_browsed_root(root: Path) -> None:
-  source = root / 'repository.jelq/addon.xml'
+  source = root / 'repository.jelk/addon.xml'
   source.write_bytes(
-    REPOSITORY_MANIFEST.replace(b'jelq.github.io/addons/addons.xml', b'jelq.github.io/addons.xml')
+    REPOSITORY_MANIFEST.replace(b'jelk.github.io/addons/addons.xml', b'jelk.github.io/addons.xml')
   )
   with pytest.raises(catalog.CatalogError, match='browsed root'):
     catalog.build(root)
@@ -247,8 +247,8 @@ def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(root: Path) -> Non
   assert sorted(package.name for package in packages) == [
     REPOSITORY_ZIP,
     REPOSITORY_ZIP,
-    'script.jelq-0.2.10.zip',
-    'script.jelq-0.2.9.zip',
+    'script.jelk-0.2.10.zip',
+    'script.jelk-0.2.9.zip',
   ]
   for package in packages:
     expected = hashlib.sha256(package.read_bytes()).hexdigest().encode('ascii') + b'\n'
@@ -258,9 +258,9 @@ def test_every_package_and_bootstrap_zip_has_a_sha256_sidecar(root: Path) -> Non
 def test_failed_build_preserves_previous_site(root: Path) -> None:
   site = catalog.build(root)
   before = (site / 'addons/addons.xml').read_bytes()
-  package_dir = root / 'packages/script.jelq'
+  package_dir = root / 'packages/script.jelk'
   package_dir.mkdir(parents=True)
-  (package_dir / 'script.jelq-0.1.0.zip').write_bytes(b'invalid')
+  (package_dir / 'script.jelk-0.1.0.zip').write_bytes(b'invalid')
   with pytest.raises(catalog.CatalogError):
     catalog.build(root)
   assert (site / 'addons/addons.xml').read_bytes() == before
@@ -269,17 +269,17 @@ def test_failed_build_preserves_previous_site(root: Path) -> None:
 def test_metadata_cannot_overwrite_package(root: Path) -> None:
   import_zip(
     root,
-    assets='<icon>script.jelq-0.1.0.zip</icon>',
-    extras={'script.jelq/script.jelq-0.1.0.zip': b'not a package'},
+    assets='<icon>script.jelk-0.1.0.zip</icon>',
+    extras={'script.jelk/script.jelk-0.1.0.zip': b'not a package'},
   )
   with pytest.raises(catalog.CatalogError, match='conflicts'):
     catalog.build(root)
 
 
 def test_metadata_cannot_overwrite_package_hash(root: Path) -> None:
-  filename = 'script.jelq-0.1.0.zip.sha256'
+  filename = 'script.jelk-0.1.0.zip.sha256'
   import_zip(
-    root, assets=f'<icon>{filename}</icon>', extras={'script.jelq/' + filename: b'fake digest'}
+    root, assets=f'<icon>{filename}</icon>', extras={'script.jelk/' + filename: b'fake digest'}
   )
   with pytest.raises(catalog.CatalogError, match='conflicts'):
     catalog.build(root)
