@@ -233,7 +233,7 @@ def test_repository_index_is_outside_the_browsed_root(root: Path, tag: str) -> N
 def test_build_rejects_repository_index_in_the_browsed_root(root: Path) -> None:
   source = root / 'repository.jelk/addon.xml'
   source.write_bytes(
-    REPOSITORY_MANIFEST.replace(b'jelk.github.io/addons/addons.xml', b'jelk.github.io/addons.xml')
+    REPOSITORY_MANIFEST.replace(b'jelk.ing/addons/addons.xml', b'jelk.ing/addons.xml')
   )
   with pytest.raises(catalog.CatalogError, match='browsed root'):
     catalog.build(root)

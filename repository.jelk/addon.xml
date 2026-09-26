@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="repository.jelk" name="jelk repository" version="1.0.3" provider-name="jelk contributors">
+<addon id="repository.jelk" name="jelk repository" version="1.0.4" provider-name="jelk contributors">
   <extension point="xbmc.addon.repository" name="jelk repository">
     <dir>
-      <info>https://ftc2.github.io/jelk.github.io/addons/addons.xml</info>
-      <checksum>https://ftc2.github.io/jelk.github.io/addons/addons.xml.md5</checksum>
-      <datadir>https://ftc2.github.io/jelk.github.io/addons/</datadir>
+      <info>https://jelk.ing/addons/addons.xml</info>
+      <checksum>https://jelk.ing/addons/addons.xml.md5</checksum>
+      <datadir>https://jelk.ing/addons/</datadir>
       <hashes>sha256</hashes>
     </dir>
   </extension>
@@ -13,6 +13,6 @@
     <description lang="en_GB">Official jelk packages for Kodi 21.3, distributed through GitHub Pages.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>
-    <source>https://github.com/ftc2/jelk.github.io</source>
+    <source>https://github.com/ftc2/jelk-repository</source>
   </extension>
 </addon>

@@ -24,7 +24,7 @@ from pathlib import Path, PurePosixPath
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_URL = 'https://ftc2.github.io/jelk.github.io/'
+BASE_URL = 'https://jelk.ing/'
 REPOSITORY_ID = 'repository.jelk'
 # Kodi caches the root listing browsed during bootstrap, then resolves the repository
 # index through that cache; files absent from the listing fail without a request.

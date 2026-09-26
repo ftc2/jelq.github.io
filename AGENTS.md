@@ -29,5 +29,5 @@
   `mirrors.kodi.tv` redirector, which otherwise stalls the checker for minutes and
   fails it with a misleading `AttributeError`.
 - `site/` is generated, ignored, and is the only directory deployed to Pages.
-- Base URL: `https://ftc2.github.io/jelk.github.io/`. Keep repository metadata,
+- Base URL: `https://jelk.ing/`. Keep repository metadata,
   links, and documentation consistent with it.

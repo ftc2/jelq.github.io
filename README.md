@@ -6,7 +6,7 @@ remain private; the packaged Python, XML, and assets are public downloads.
 
 ## Install in Kodi
 
-File source: **https://ftc2.github.io/jelk.github.io/**
+File source: **https://jelk.ing/**
 
 1. In Kodi 21.3, open **Settings → File manager → Add source** and enter
    the URL above. Give the source a name such as `jelk`.
@@ -23,7 +23,7 @@ The website also provides direct ZIP links for manual installation.
 
 ## One-time GitHub setup
 
-An administrator of `ftc2/jelk.github.io` must:
+An administrator of `ftc2/jelk-repository` must:
 
 1. Make **this distribution repository** public, or keep it private on a GitHub
    plan that permits public Pages from private repositories. Keep `ftc2/jelk`
@@ -31,7 +31,7 @@ An administrator of `ftc2/jelk.github.io` must:
 2. In **Settings → Pages → Build and deployment → Source**, select **GitHub
    Actions**. Keep the resulting site publicly accessible.
 3. From the `ftc2` account, create a fine-grained personal access token restricted
-   to **only `ftc2/jelk.github.io`**, with **Contents: Read and write**. No private
+   to **only `ftc2/jelk-repository`**, with **Contents: Read and write**. No private
    source repository access is needed. Choose an expiration and renew the token
    before it expires. An outside collaborator's fine-grained token cannot target
    another personal account's repository.
